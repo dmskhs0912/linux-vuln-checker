@@ -7,13 +7,14 @@
 
 # 1. /etc/os-release 파싱
 if [ -r /etc/os-release ]; then
-  . /etc/os-release
-  OS_ID=$(printf "%s" "$ID"   | tr '[:upper:]' '[:lower:]')
-  OS_LIKE=$(printf "%s" "$ID_LIKE" | tr '[:upper:]' '[:lower:]')
-  OS_VERSION="$VERSION_ID"
+    # /etc/os-release 파일에서 ID, ID_LIKE, VERSION_ID 추출
+    . /etc/os-release
+    OS_ID="${ID,,}"            # 예: ubuntu, centos, rhel
+    OS_LIKE="${ID_LIKE,,}"     # 예: debian, rhel
+    OS_VERSION="${VERSION_ID}" # 예: 20.04, 7, 15.1
 else
-  printf '[ERROR] /etc/os-release 파일을 찾을 수 없습니다. 수동 점검 필요.\n' >&2
-  return 1 2>/dev/null || exit 1
+    echo "[ERROR] /etc/os-release 파일을 찾을 수 없습니다. 수동 점검 필요."
+    exit 1
 fi
 
 # 2. 어떤 계열인지 플래그 설정 (true/false)
