@@ -185,6 +185,26 @@ check_account_lock_threshold() {
     fi
 }
 
+# U-04 패스워드 파일 보호 (패스워드 암호화 사용)
+check_password_encryption() {
+    # /etc/shadow 파일 존재 확인
+    if [ ! -f "/etc/shadow" ]; then
+        result_fail "U-04 /etc/shadow 파일 없음 (취약)"
+        return
+    fi
+
+    # /etc/passwd 파일 내 패스워드 필드가 'x'로 표시되는지 확인
+    local line
+    line=$(grep -E '^.+:x:.+' "/etc/passwd" | head -n1)
+    if [ -z "$line" ]; then
+        result_fail "U-04 패스워드 암호화 미사용 (취약)"
+        return
+    fi
+
+    result_pass "U-04 패스워드 암호화 사용 중 (양호)"
+
+}
+
 check_root_remote_login
 check_password_complexity
 check_account_lock_threshold
