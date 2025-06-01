@@ -9,7 +9,7 @@ check_root_remote_login() {
     local telnet_ok=true
 
     # SSH root 원격 접속 허용 확인
-    if [-f /etc/ssh/sshd_config]; then
+    if [ -f /etc/ssh/sshd_config ]; then
         if grep -Eq "^\s*PermitRootLogin\s+no" /etc/ssh/sshd_config; then
             :
         else
@@ -21,7 +21,7 @@ check_root_remote_login() {
     if [ -f /etc/securetty ]; then
         # /etc/securetty 파일에 pts/ 항목이 없거나 주석 처리되어야 함
         if grep -Eq '^pts/' /etc/securetty; then
-            tty_ok=false
+            telnet_ok=false
         fi
     fi
 
@@ -38,3 +38,4 @@ check_root_remote_login() {
     fi
 }
 
+check_root_remote_login
