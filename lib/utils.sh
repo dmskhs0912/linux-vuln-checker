@@ -21,3 +21,26 @@ result_fail() {
   FAILED+=("$message")
   TOTAL_RESULT+=("$message")
 }
+
+# PAM 모듈 존재 여부 검사 및 경로 리턴 함수
+# Usage: get_pam_module_path module_name
+get_pam_module_path() {
+  local module_name="$1"
+  local module_path=""
+  for dir in \
+    "/lib/security" \
+    "/lib64/security" \
+    "/usr/lib/security" \
+    "/usr/lib64/security" \
+    "/usr/lib/x86_64-linux-gnu/security" \
+    "/usr/lib/i386-linux-gnu/security" \
+    "/usr/lib/$(uname -m)-linux-gnu/security" \
+  ; do
+    if [ -f "$dir/$module_name" ]; then
+      module_path="$dir/$module_name"
+      break
+    fi
+  done
+
+  echo "$module_path"
+}

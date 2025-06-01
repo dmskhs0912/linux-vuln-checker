@@ -40,26 +40,14 @@ check_root_remote_login() {
 }
 
 # U-02 패스워드 복잡성 설정 (PAM 모듈 및 정책 진단)
-# TODO: pam_cracklib.so 모듈 사용하는 경우 처리 필요요
+# TODO: pam_cracklib.so 모듈 사용하는 경우 처리 필요
 check_password_complexity() {
     local module_path=""
     local policy_path="/etc/pam.d/common-password"
 
     # 1) pwquality.so 존재 검사 (후보 디렉터리 배열)
-    for dir in \
-        "/lib/security" \
-        "/lib64/security" \
-        "/usr/lib/security" \
-        "/usr/lib64/security" \
-        "/usr/lib/x86_64-linux-gnu/security" \
-        "/usr/lib/i386-linux-gnu/security" \
-        "/usr/lib/$(uname -m)-linux-gnu/security" \
-    ; do
-    if [ -f "$dir/pam_pwquality.so" ]; then
-        module_path="$dir/pam_pwquality.so"
-        break
-    fi
-    done
+    module_path=$(get_pam_module_path "pam_pwquality.so")
+
 
     # 모듈 미설치시 취약
     if [ -n "$module_path" ]; then
@@ -112,6 +100,23 @@ check_password_complexity() {
     fi
 }
 
+# U-03 계정 잠금 임계값 설정
+check_account_lock_threshold() {
+    local policy_path=""
+    
+    # 배포판에 따른 PAM 인증 정책 경로 설정
+    if [[ $OS_LIKE =~ "debian" ]]; then
+        policy_path="/etc/pam.d/common-auth"
+    elif [[ $OS_LIKE =~ "rhel" ]]; then
+        policy_path="/etc/pam.d/system-auth"
+    else
+        echo "[U-03] 지원하지 않는 Linux 배포판입니다."
+        return
+    fi
+
+
+
+}
 
 check_root_remote_login
 check_password_complexity
