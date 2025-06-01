@@ -89,6 +89,7 @@ check_password_complexity() {
             "lcredit=-1" \
             "dcredit=-1" \
             "ocredit=-1" \
+            "enforce_for_root" \
         )
 
         # 모든 파라미터가 포함되어 있는지 확인
@@ -110,4 +111,7 @@ check_password_complexity() {
         result_fail "U-02 패스워드 복잡성 관련 PAM 정책 $policy_path 없음 (취약)"
     fi
 }
+
+
 check_root_remote_login
+check_password_complexity
