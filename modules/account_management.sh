@@ -205,6 +205,29 @@ check_password_encryption() {
 
 }
 
+# U-44 root 이외의 UID가 '0' 금지
+check_dup_zero_uid() {
+    local zero_uid_users
+    local count
+
+    # UID가 0인 사용자 계정 이름 목록 추출 후 개수 세기
+    zero_uid_users=$(awk -F: '$3 == 0 {print $1}' "/etc/passwd")
+    count=$(printf "%s\n" "$zero_uid_users" | grep -c .)
+
+    if [ "$count" -le 1 ]; then
+        result_pass "U-44 UID=0인 계정 단일(root)만 존재 (양호)"
+    else
+        local dup_list
+        
+        # UID가 0인 유저들 쉼표로 구분 후 출력
+        dup_list=$(printf "%s\n" "$zero_uid_users" | paste -sd "," -)
+        result_fail "U-44 UID=0인 계정이 여러 개 존재: [$dup_list] (취약)"
+    fi
+}
+
+
 check_root_remote_login
 check_password_complexity
 check_account_lock_threshold
+check_password_encryption
+check_dup_zero_uid
