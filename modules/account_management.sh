@@ -101,8 +101,10 @@ check_password_complexity() {
 }
 
 # U-03 계정 잠금 임계값 설정
+# pam_faillock.so 모듈을 사용하는 경우도 있다지만.. KISA 가이드 기준 tally 사용하므로 우선 보류류
 check_account_lock_threshold() {
     local policy_path=""
+    local module_path=""
     
     # 배포판에 따른 PAM 인증 정책 경로 설정
     if [[ $OS_LIKE =~ "debian" ]]; then
@@ -114,9 +116,75 @@ check_account_lock_threshold() {
         return
     fi
 
+    # pam_tally.so 모듈 설치 확인
+    module_path=$(get_pam_module_path "pam_tally.so")
 
+    # 모듈 미설치시 취약
+    if [ -n "$module_path" ]; then
+        :
+    else
+        module_path=$(get_pam_module_path "pam_tally2.so")
+        if [ -n "$module_path" ]; then
+            :
+        else 
+            result_fail "U-03 계정 잠금 임계값 관련 PAM 모듈 (pam_tally.so) 미설치 (취약)"
+            return
+        fi
+    fi
 
+    # 인증 관련 PAM 정책(system-auth/common-auth) 검사
+    if [ -f "$policy_path" ]; then
+        # pam_tally.so 호출 줄 가져오기
+        local line_auth
+        local line_account
+        line_auth=$(grep -E '^auth\s+required\s+pam_tally2?\.so' "$policy_path" | head -n1) # RHEL 6 이상은 pam_tally2.so를 사용한다는 소문이..
+        line_account=$(grep -E '^account\s+required\s+pam_tally2?\.so' "$policy_path" | head -n1)
+        if [[ -z "$line_auth" || -z "$line_account" ]]; then
+            result_fail "U-03 $policy_path에 pam_tally.so 호출 없음: auth/account 정책 모두 required 타입으로 pam_tally.so를 호출해야함. (취약)"
+            return
+        fi
+
+        # 검증해야 할 파라미터 리스트 (KISA 권장 값)
+        local params_auth=( \
+            "deny=5" \
+            "unlock_time=120" \
+            "no_magic_root" \
+        )
+
+        local params_account=( \
+            "no_magic_root" \
+            "reset" \
+        )
+
+        # 모든 파라미터가 포함되어 있는지 확인
+        local missing=false
+        local p
+        for p in "${params_auth[@]}"; do
+            if [[ "$line_auth" != *"$p"* ]]; then
+                missing=true
+                break
+            fi
+        done
+
+        for p in "${params_account[@]}"; do
+            if [[ "$line_account" != *"$p"* ]]; then
+                missing=true
+                break
+            fi
+        done
+
+        if ! $missing; then
+            result_pass "U-03 $policy_path 계정 잠금 설정: $line_auth $line_account (양호)"
+        else
+            result_fail "U-03 $policy_path 권장 파라미터 누락 (취약): $line_auth $line_account"
+            return
+        fi
+        
+    else
+        result_fail "U-03 계정 잠금 임계값값 관련 PAM 정책 $policy_path 없음 (취약)"
+    fi
 }
 
 check_root_remote_login
 check_password_complexity
+check_account_lock_threshold
