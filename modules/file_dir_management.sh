@@ -43,5 +43,26 @@ check_nouser_files() {
     fi
 }
 
+# U-07 /etc/passwd 파일 소유자 및 권한 설정 
+check_passwd_owner() {
+    log_check_start "U-07" "for a owner and a permission of /etc/passwd file"
+    
+    local owner=$(stat -c "%U" "/etc/passwd")
+    local perm=$(stat -c "%a" "/etc/passwd")
+
+    if [[ "$owner" != "root" ]]; then
+        result_fail "U-07 /etc/passwd 파일의 소유자가 root가 아닌 ${$owner}로 되어 있음 (취약)"
+        return
+    fi
+
+    if [[ "$perm" -le 644 ]]; then
+        result_pass "U-07 /etc/passwd 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
+    else
+        result_fail "U-07 /etc/passwd 파일의 권한이 644 이하가 아님 (취약)"
+    fi
+
+}
+
 check_root_path
 check_nouser_files
+check_passwd_owner
