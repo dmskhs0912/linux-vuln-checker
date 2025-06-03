@@ -6,7 +6,7 @@
 
 # U-05 root 홈, 패스 디렉터리 권한 및 패스 설정
 check_root_path() {
-    
+
     if echo "$PATH" | grep -Eq '^[.:]'; then
         result_fail "U-05 root 계정의 PATH가 . 또는 ::으로 시작함 (취약)"
         return
@@ -20,3 +20,27 @@ check_root_path() {
     fi
 
 }
+
+# U-06 파일 및 디렉터리 소유자 설정 (소유자가 존재하지 않는 파일/디렉터리 검사)
+check_nouser_files() {
+    local root_fs files count sample_list
+
+    # 소유자가 없는 모든 파일 및 디렉터리를 찾아 경로만 출력
+    files=$(find / -xdev -nouser -print 2>/dev/null)
+
+    # Debug
+    echo $files
+    # 결과 개수 세기
+    count=$(printf "%s\n" "$files" | grep -c .)
+
+    if [ "$count" -eq 0 ]; then
+        result_pass "U-06 소유자가 없는 파일/디렉터리 존재하지 않음 (양호)"
+    else
+        # 소유자가 없는 파일/디렉터리 5개만 예시 출력 
+        sample_list=$(printf "%s\n" "$files" | head -n 5 | paste -sd "," -)
+        result_fail "U-06 소유자가 없는 파일/디렉터리 ${count}개 발견 (취약). 예시: ${sample_list}"
+    fi
+}
+
+check_root_path
+check_nouser_files
