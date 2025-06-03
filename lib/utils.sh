@@ -44,3 +44,10 @@ get_pam_module_path() {
 
   echo "$module_path"
 }
+
+# 로그 헬퍼 
+log_check_start() {
+    local id="$1"       
+    local message="$2"  
+    printf "%s Checking %s…\n" "[$id]" "$message"
+}
