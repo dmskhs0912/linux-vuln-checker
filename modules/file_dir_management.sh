@@ -101,8 +101,53 @@ check_hosts_owner() {
     fi
 }
 
+# U-10 /etc/(x)inetd.conf 파일 소유자 및 권한 설정
+check_inetd_owner() {
+    log_check_start "U-10" "for owners and permissions of /etc/(x)inetd.conf and /etc/xinet.d/"
+    
+    local files_to_check=()
+    local owner
+    local perm
+
+    # inetd 관련 파일/디렉터리 존재 확인
+    if [-f /etc/inetd.conf ]; then
+        files_to_check+=( "/etc/inetd.conf" )
+    fi
+
+    if [ -f /etc/xinetd.conf ]; then
+        files_to_check+=( "/etc/xinetd.conf" )
+    fi
+
+    if [ -d /etc/xinetd.d ]; then
+        for f in /etc/xinet.d/*; do
+            [ -f "$f" ] && files_to_check+=( "$f" )
+        done
+    fi
+
+    # 해당 파일/디렉터리 없는 경우 양호
+    if [ ${#files_to_check[@]} -eq 0 ]; then
+        result_pass "U-10 슈퍼 데몬 관련 파일 없음 (양호)"
+        return
+    fi
+
+    for target in "${files_to_check[@]}"; do
+        owner=$(stats -c "%U" "$target")
+        perm=$(stats -c "%a" "$target")
+
+        if [[ "$owner" != "root" || "$perm" -ne 600 ]]; then
+            result_fail "U-10 $target 소유자($owner) 또는 권한($perm)이 기준(root/600)에 맞지 않음 (취약)"
+            return
+        fi
+    done
+
+    result_pass "U-10 슈퍼 데몬 관련 파일의 소유자와 권한이 적절하게 설정되어 있음 (양호)"
+}
+
+
 check_root_path
-check_nouser_files
+# ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
+#check_nouser_files 
+# ------------------------------------------------------------------------------
 check_passwd_owner
 check_shadow_owner
 check_hosts_owner
