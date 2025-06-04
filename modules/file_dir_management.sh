@@ -110,7 +110,7 @@ check_inetd_owner() {
     local perm
 
     # inetd 관련 파일/디렉터리 존재 확인
-    if [-f /etc/inetd.conf ]; then
+    if [ -f /etc/inetd.conf ]; then
         files_to_check+=( "/etc/inetd.conf" )
     fi
 
@@ -131,8 +131,8 @@ check_inetd_owner() {
     fi
 
     for target in "${files_to_check[@]}"; do
-        owner=$(stats -c "%U" "$target")
-        perm=$(stats -c "%a" "$target")
+        owner=$(stat -c "%U" "$target")
+        perm=$(stat -c "%a" "$target")
 
         if [[ "$owner" != "root" || "$perm" -ne 600 ]]; then
             result_fail "U-10 $target 소유자($owner) 또는 권한($perm)이 기준(root/600)에 맞지 않음 (취약)"
@@ -151,3 +151,4 @@ check_root_path
 check_passwd_owner
 check_shadow_owner
 check_hosts_owner
+check_inetd_owner
