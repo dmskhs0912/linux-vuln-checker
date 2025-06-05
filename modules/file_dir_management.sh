@@ -159,17 +159,39 @@ check_inetd_owner() {
 check_syslog_owner() {
     log_check_start "U-11" "for a owner and a permission of /etc/syslog.conf file"
 
-    check_owner_perm "/etc/syslog.conf" "root" 644
+    local file_path="/etc/syslog.conf"
+
+    check_owner_perm "$file_path" "root" 644
     local rc1=$?
-    check_owner_perm "/etc/syslog.conf" "bin" 644
+    check_owner_perm "$file_path" "bin" 644
     local rc2=$?
-    check_owner_perm "/etc/syslog.conf" "sys" 644
+    check_owner_perm "$file_path" "sys" 644
     local rc3=$?
 
     if [[ $rc1 -ge 1 || $rc2 -ge 1 || $rc3 -ge 1 ]]; then
         result_pass "U-11 /etc/syslog.conf 파일의 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
     else
         result_fail "U-11 /etc/syslog.conf 파일의 소유자 및 권한이 기준에 맞지 않음 (취약)"
+    fi
+}
+
+# U-12 /etc/services 파일 소유자 및 권한 설정
+check_services_owner() {
+    log_check_start "U-12" "for a owner and a permission of /etc/services file"
+
+    local file_path="/etc/services"
+
+    check_owner_perm "$file_path" "root" 644
+    local rc1=$?
+    check_owner_perm "$file_path" "bin" 644
+    local rc2=$?
+    check_owner_perm "$file_path" "sys" 644
+    local rc3=$?
+
+    if [[ $rc1 -ge 1 || $rc2 -ge 1 || $rc3 -ge 1 ]]; then
+        result_pass "U-12 /etc/services 파일의 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
+    else
+        result_fail "U-12 /etc/services 파일의 소유자 및 권한이 기준에 맞지 않음 (취약)"
     fi
 }
 
@@ -182,3 +204,4 @@ check_shadow_owner
 check_hosts_owner
 check_inetd_owner
 check_syslog_owner
+check_services_owner
