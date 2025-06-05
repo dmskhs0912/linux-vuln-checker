@@ -75,38 +75,27 @@ check_owner_perm() {
 check_passwd_owner() {
     log_check_start "U-07" "for a owner and a permission of /etc/passwd file"
     
-    local owner=$(stat -c "%U" "/etc/passwd")
-    local perm=$(stat -c "%a" "/etc/passwd")
+    check_owner_perm "/etc/passwd" "root" 644
+    local rc=$?
 
-    if [[ "$owner" != "root" ]]; then
-        result_fail "U-07 /etc/passwd 파일의 소유자가 root가 아닌 ${$owner}로 되어 있음 (취약)"
-        return
-    fi
-
-    if [[ "$perm" -le 644 ]]; then
+    if [ $rc -ge 1 ]; then
         result_pass "U-07 /etc/passwd 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
     else
-        result_fail "U-07 /etc/passwd 파일의 권한이 644 이하가 아님 (취약)"
+        result_fail "U-07 /etc/passwd 파일의 소유자 또는 권한이 기준(root/644 이하)에 맞지 않음 (취약)"
     fi
-
 }
 
 # U-08 /etc/shadow 파일 소유자 및 권한 설정
 check_shadow_owner() {
     log_check_start "U-08" "for a owner and a permission of /etc/shadow file"
 
-    local owner=$(stat -c "%U" "/etc/shadow")
-    local perm=$(stat -c "%a" "/etc/shadow")
+    check_owner_perm "/etc/shadow" "root" 400
+    local rc=$?
 
-    if [[ "$owner" != "root" ]]; then
-        result_fail "U-08 /etc/shadow 파일의 소유자가 root가 아닌 ${$owner}로 되어 있음 (취약)"
-        return
-    fi
-
-    if [[ "$perm" -le 400 ]]; then
+    if [ $rc -ge 1 ]; then
         result_pass "U-08 /etc/shadow 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
     else
-        result_fail "U-08 /etc/shadow 파일의 권한이 400 이하가 아님 (취약)"
+        result_fail "U-08 /etc/shadow 파일의 소유자 또는 권한이 기준(root/400 이하)에 맞지 않음 (취약)"
     fi
 }
 
@@ -114,18 +103,13 @@ check_shadow_owner() {
 check_hosts_owner() {
     log_check_start "U-09" "for a owner and a permission of /etc/hosts file"
 
-    local owner=$(stat -c "%U" "/etc/hosts")
-    local perm=$(stat -c "%a" "/etc/hosts")
+    check_owner_perm "/etc/hosts" "root" 600
+    local rc=$?
 
-    if [[ "$owner" != "root" ]]; then
-        result_fail "U-09 /etc/hosts 파일의 소유자가 root가 아닌 ${$owner}로 되어 있음 (취약)"
-        return
-    fi
-
-    if [[ "$perm" -le 600 ]]; then
+    if [ $rc -ge 1 ]; then
         result_pass "U-09 /etc/hosts 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
     else
-        result_fail "U-09 /etc/hosts 파일의 권한이 600 이하가 아님 (취약)"
+        result_fail "U-09 /etc/hosts 파일의 소유자 또는 권한이 기준(root/600 이하)에 맞지 않음 (취약)"
     fi
 }
 
@@ -159,11 +143,11 @@ check_inetd_owner() {
     fi
 
     for target in "${files_to_check[@]}"; do
-        owner=$(stat -c "%U" "$target")
-        perm=$(stat -c "%a" "$target")
+        check_owner_perm "$target" "root" 600
+        local rc=$?
 
-        if [[ "$owner" != "root" || "$perm" -ne 600 ]]; then
-            result_fail "U-10 $target 소유자($owner) 또는 권한($perm)이 기준(root/600)에 맞지 않음 (취약)"
+        if [ $rc -ne 1 ]; then
+            result_fail "U-09 $target 파일의 소유자 또는 권한이 기준(root/600)에 맞지 않음 (취약)"
             return
         fi
     done
