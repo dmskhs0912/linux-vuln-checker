@@ -43,6 +43,34 @@ check_nouser_files() {
     fi
 }
 
+# 파일 소유자/권한 검사용 함수
+# Usage: check_owner_perm "검사할 파일" "기준 소유자" 기준권한(정수)
+# 취약: 0 / 양호(둘다 일치): 1 / 소유자 양호, 기준 권한 이하로 설정: 2 리턴
+check_owner_perm() {
+    local file_path="$1"
+    local kisa_owner="$2"
+    local kisa_perm="$3"
+
+    # 존재하지 않는 파일이면 양호(1) 리턴
+    if [ ! -e "$file_path" ]; then
+        return 1
+    fi
+
+    # 실제 파일의 소유자/권한
+    local owner=$(stat -c "%U" "$file_path")
+    local perm=$(stat -c "%a" "$file_path")
+
+    if [[ "$owner" == "$kisa_owner" ]]; then
+        if [[ "$perm" -eq "$kisa_perm" ]]; then
+            return 1
+        elif [[ "$perm" -le "$kisa_perm" ]]; then
+            return 2
+        fi
+    fi
+
+    return 0
+}
+
 # U-07 /etc/passwd 파일 소유자 및 권한 설정 
 check_passwd_owner() {
     log_check_start "U-07" "for a owner and a permission of /etc/passwd file"
