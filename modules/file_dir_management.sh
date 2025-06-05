@@ -147,7 +147,7 @@ check_inetd_owner() {
         local rc=$?
 
         if [ $rc -ne 1 ]; then
-            result_fail "U-09 $target 파일의 소유자 또는 권한이 기준(root/600)에 맞지 않음 (취약)"
+            result_fail "U-10 $target 파일의 소유자 또는 권한이 기준(root/600)에 맞지 않음 (취약)"
             return
         fi
     done
@@ -155,6 +155,23 @@ check_inetd_owner() {
     result_pass "U-10 슈퍼 데몬 관련 파일의 소유자와 권한이 적절하게 설정되어 있음 (양호)"
 }
 
+# U-11 /etc/syslog.conf 파일 소유자 및 권한 설정
+check_syslog_owner() {
+    log_check_start "U-11" "for a owner and a permission of /etc/syslog.conf file"
+
+    check_owner_perm "/etc/syslog.conf" "root" 644
+    local rc1=$?
+    check_owner_perm "/etc/syslog.conf" "bin" 644
+    local rc2=$?
+    check_owner_perm "/etc/syslog.conf" "sys" 644
+    local rc3=$?
+
+    if [[ $rc1 -ge 1 || $rc2 -ge 1 || $rc3 -ge 1 ]]; then
+        result_pass "U-11 /etc/syslog.conf 파일의 소유자 및 권한이 적절하게 설정되어 있음 (양호)"
+    else
+        result_fail "U-11 /etc/syslog.conf 파일의 소유자 및 권한이 기준에 맞지 않음 (취약)"
+    fi
+}
 
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
@@ -164,3 +181,4 @@ check_passwd_owner
 check_shadow_owner
 check_hosts_owner
 check_inetd_owner
+check_syslog_owner
