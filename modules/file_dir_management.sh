@@ -195,6 +195,49 @@ check_services_owner() {
     fi
 }
 
+# U-13 특수 권한 파일 점검
+# 이후 구현
+
+# U-14 사용자, 시스템 시작 파일 및 환경 파일 소유자 및 권한 설정
+check_env_file_owner() {
+    log_check_start "U-14" "for owners and permissions of each environment variable files"
+
+    # config과 연결해서 사용하면 좋을듯. 나중에 구현 
+    local files_to_check=(
+        ".bash_profile"
+        ".bashrc"
+        ".profile"
+    )
+    local vuln_files=()
+
+    # /etc/passwd 파일에서 각 사용자 파싱
+    while IFS=: read -r username _ uid _ _ home _; do
+        if [[ "$uid" -ge 1000 && -d "$home" ]]; then
+            for ufile in "${files_to_check[@]}"; do
+                local fullpath="$home/$ufile"
+                
+                # 없으면 스킵
+                if [ ! -e "$fullpath" ]; then
+                    continue
+                fi
+
+                check_owner_perm "$fullpath" "$username" 644
+                local rc=$?
+                if [ $rc -eq 0 ]; then
+                    vuln_files+=( "$fullpath" )
+                fi
+            done
+        fi
+    done < /etc/passwd
+
+    if [ ${#vuln_files[@]} -gt 0 ]; then
+        local joined=$(IFS=','; echo "${vuln_files[*]}")
+        result_fail "U-14 사용자 환경 변수 파일 소유자 또는 권한이 적절하지 않음 (취약): $joined"
+    else
+        result_pass "U-14 사용자 환경 변수 파일 소유자 또는 권한이 적절하게 설정되어 있음 (양호)"
+    fi
+}
+
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
 #check_nouser_files 
