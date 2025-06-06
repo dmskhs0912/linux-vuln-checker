@@ -238,6 +238,89 @@ check_env_file_owner() {
     fi
 }
 
+# U-15 world writable 파일 점검
+# 필요한 world writable 파일을 어떻게 구분할지? config과 연동할지 고민 후 구현
+
+# 파일이 디바이스 노드인지 확인
+is_device_node() {
+    local file_path="$1"
+    
+    if [[ -b "$file_path" || -c "$file_path" ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# 디바이스 노드의 major, minor 번호를 꺼내 실제 sysfs에 존재하는 디바이스인지 확인
+device_exists_in_sysfs() {
+    local file_path="$1"
+    local hexmaj hexmin maj min
+
+    read -r hexmaj hexmin < <(stat -c "%t %T" "$file_path" 2>/dev/null)
+    if [[ -z "$hexmaj" || -z "$hexmin" ]]; then
+        return 0
+    fi
+
+    # major, minor 값 10진수 변환
+    maj=$((0x$hexmaj))
+    min=$((0x$hexmin))
+
+    # 블록 디바이스
+    if [ -b "$file_path" ]; then
+        if [ -e "/sys/dev/block/${maj}:${min}" ]; then
+            return 1
+        else
+            return 0
+        fi
+    fi
+
+    # 문자 디바이스
+    if [ -c "$file_path" ]; then
+        if [ -e "/sys/dev/char/${maj}:${min}" ]; then
+            return 1
+        else
+            return 0
+        fi
+    fi  
+
+    return 0
+}
+
+# U-16 /dev에 존재하지 않는 device 파일 점검
+check_dev() {
+    log_check_start "U-16" "for a invalid device file in /dev"
+
+    local vuln_list=()
+
+    while IFS= read -r -d '' f; do
+        # 심볼릭 링크 제외
+        if [ -L "$f" ]; then
+            continue
+        fi
+
+        # 디바이스 노드가 맞는지 확인
+        if ! is_device_node "$f"; then
+            vuln_list+=( "$f (디바이스 아님)" )
+            continue
+        fi
+
+        # sysfs에 존재하는지 확인
+        if ! device_exists_in_sysfs "$f"; then
+            vuln_list+=( "$f (sysfs에 존재하지 않음)" )
+        fi
+        
+    done < <(find /dev -mindepth 1 -maxdepth 1 -print0) # /dev 하위 파일만 검사함. depth 1
+
+    if [ ${#vuln_list[@]} -gt 0 ]; then
+        local joined
+        joined=$(IFS=','; echo "${vuln_list[*]}")
+        result_fail "U-16 /dev에 유효하지 않은 파일 존재 (취약): $joined"
+    else
+        result_pass "U-16 /dev 하위 모든 장치 파일이 유효함 (양호)"
+    fi
+}
+
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
 #check_nouser_files 
@@ -248,3 +331,5 @@ check_hosts_owner
 check_inetd_owner
 check_syslog_owner
 check_services_owner
+check_env_file_owner
+check_dev
