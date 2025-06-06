@@ -294,8 +294,8 @@ check_dev() {
     local vuln_list=()
 
     while IFS= read -r -d '' f; do
-        # 심볼릭 링크 제외
-        if [ -L "$f" ]; then
+        # 심볼릭 링크, 디렉터리 제외
+        if [[ -L "$f" || -d "$f" ]]; then
             continue
         fi
 
