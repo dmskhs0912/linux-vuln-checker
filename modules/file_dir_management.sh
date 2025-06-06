@@ -246,9 +246,9 @@ is_device_node() {
     local file_path="$1"
     
     if [[ -b "$file_path" || -c "$file_path" ]]; then
-        return 1
-    else
         return 0
+    else
+        return 1
     fi
 }
 
@@ -259,7 +259,7 @@ device_exists_in_sysfs() {
 
     read -r hexmaj hexmin < <(stat -c "%t %T" "$file_path" 2>/dev/null)
     if [[ -z "$hexmaj" || -z "$hexmin" ]]; then
-        return 0
+        return 1
     fi
 
     # major, minor 값 10진수 변환
@@ -269,18 +269,18 @@ device_exists_in_sysfs() {
     # 블록 디바이스
     if [ -b "$file_path" ]; then
         if [ -e "/sys/dev/block/${maj}:${min}" ]; then
-            return 1
-        else
             return 0
+        else
+            return 1
         fi
     fi
 
     # 문자 디바이스
     if [ -c "$file_path" ]; then
         if [ -e "/sys/dev/char/${maj}:${min}" ]; then
-            return 1
-        else
             return 0
+        else
+            return 1
         fi
     fi  
 
