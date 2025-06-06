@@ -321,6 +321,50 @@ check_dev() {
     fi
 }
 
+# U-17 $HOME/.rhosts, hosts.equiv 사용 금지
+check_rhosts() {
+    log_check_start "U-17" "for .rhosts and hosts.equiv files"
+    local rc
+
+    # 1) /etc/hosts.equiv 먼저 검사
+    if [ -f "/etc/hosts.equiv" ]; then
+        # 소유자/권한 검사
+        check_owner_perm "/etc/hosts.equiv" "root" 600
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            result_fail "U-17 /etc/hosts.equiv 파일의 소유자 또는 권한이 적절하지 않음 (취약)"
+            return
+        fi
+
+        # + 포함 검사
+        if grep -q '^[[:space:]]*\+' /etc/hosts.equiv 2>/dev/null; then
+            result_fail "U-17 /etc/hosts.equiv 파일에 '+' 설정 (취약)"
+            return
+        fi
+    fi
+
+    # 2) 각 사용자 홈 디렉터리의 .rhosts 파일 검사
+    while IFS=: read -r username _ uid _ _ home _; do
+        if [[ "$uid" -ge 1000 && -d "$home" ]]; then
+            if [ -f "$home/.rhosts" ]; then
+                check_owner_perm "$home/.rhosts" "$username" 600
+                rc=$?
+                if [ $rc -eq 0 ]; then
+                    result_fail "U-17 $home/.rhosts 파일의 소유자 또는 권한이 적절하지 않음 (취약)"
+                    return
+                fi
+
+                if grep -q '^[[:space:]]*\+' $home/.rhosts 2>/dev/null; then
+                    result_fail "U-17 $home/.rhosts 파일에 '+' 설정 (취약)"
+                    return
+                fi
+            fi
+        fi
+    done < /etc/passwd
+
+    result_pass "U-17 .rhosts 및 /etc/hosts.equiv 파일 양호 (양호)"
+}
+
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
 #check_nouser_files 
