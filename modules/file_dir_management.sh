@@ -365,6 +365,58 @@ check_rhosts() {
     result_pass "U-17 .rhosts 및 /etc/hosts.equiv 파일 양호 (양호)"
 }
 
+# U-18 접속 IP 포트 제한
+check_ip_port_restriction() {
+    log_check_start "U-18" "for a connection IP / port restriction"
+
+    # 1) TCP Wrapper 사용 여부 확인 (libwrap)
+    local bin
+    local services=(
+        systat
+        fingerd
+        ftpd
+        telnetd
+        rlogind
+        rshd
+        talkd
+        execd
+        tftpd
+        sshd
+    )
+    local used=false
+    if command -v tcpd >/dev/null 2>&1; then
+        used=true
+    fi
+    for svc in "${services[@]}"; do
+        bin=$(command -v "$svc" 2>/dev/null) || continue
+        if ldd "$bin" 2>/dev/null | grep -q libwrap; then
+            used=true
+            break
+        fi
+    done
+
+    # 2) TCP Wrapper 사용하는 경우 설정 확인 (/etc/hosts.deny & /etc/hosts.allow)
+    if $used; then
+        if grep -qE '^\s*ALL:\s*ALL' /etc/hosts.deny 2>/dev/null && [ -s /etc/hosts.allow ]; then
+            :
+        else
+            result_fail "U-18 TCP Wrapper 미설정: /etc/hosts.deny에 ALL: ALL 없거나 /etc/hosts.allow 파일 없음 " 
+        fi
+    fi
+
+    # 3) iptables 기본 정책 확인
+    if command -v iptables >/dev/null 2>&1; then
+        local policy
+        # 기본 INPUT 정책 뽑기
+        policy=$(iptables -L INPUT -n | awk '/Chain INPUT/ {print $4}' | tr -d ')')
+        if [ "$policy" != "DROP" ]; then
+            result_fail "U-18 iptables: INPUT 체인 기본 정책이 $policy 으로 설정됨"
+        fi
+    fi
+
+    result_pass "U-18 접속 IP/Port 제한 설정이 적절함 (양호)"
+}
+
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
 #check_nouser_files 
@@ -377,3 +429,5 @@ check_syslog_owner
 check_services_owner
 check_env_file_owner
 check_dev
+check_rhosts
+check_ip_port_restriction
