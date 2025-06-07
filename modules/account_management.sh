@@ -6,6 +6,10 @@
 
 # U-01 root 원격 접속 제한
 check_root_remote_login() {
+    if should_skip "U-01"; then
+        return
+    fi
+
     log_check_start "U-01" "for root remote login"
 
     local ssh_ok=true
@@ -44,6 +48,10 @@ check_root_remote_login() {
 # U-02 패스워드 복잡성 설정 (PAM 모듈 및 정책 진단)
 # TODO: pam_cracklib.so 모듈 사용하는 경우 처리 필요
 check_password_complexity() {
+    if should_skip "U-02"; then
+        return
+    fi
+
     log_check_start "U-02" "for password complexity policies"
 
     local module_path=""
@@ -107,6 +115,10 @@ check_password_complexity() {
 # U-03 계정 잠금 임계값 설정
 # pam_faillock.so 모듈을 사용하는 경우도 있다지만.. KISA 가이드 기준 tally 사용하므로 우선 보류류
 check_account_lock_threshold() {
+    if should_skip "U-03"; then
+        return
+    fi
+
     log_check_start "U-03" "for account lockdown policies"
 
     local policy_path=""
@@ -193,6 +205,10 @@ check_account_lock_threshold() {
 
 # U-04 패스워드 파일 보호 (패스워드 암호화 사용)
 check_password_encryption() {
+    if should_skip "U-04"; then
+        return
+    fi
+
     log_check_start "U-04" "for password encryption"
 
     # /etc/shadow 파일 존재 확인
@@ -215,6 +231,10 @@ check_password_encryption() {
 
 # U-44 root 이외의 UID가 '0' 금지
 check_dup_zero_uid() {
+    if should_skip "U-44"; then
+        return
+    fi
+
     log_check_start "U-44" "for duplicated root UID"
 
     local zero_uid_users

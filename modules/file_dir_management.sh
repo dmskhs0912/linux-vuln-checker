@@ -6,6 +6,10 @@
 
 # U-05 root 홈, 패스 디렉터리 권한 및 패스 설정
 check_root_path() {
+    if should_skip "U-05"; then
+        return
+    fi
+
     log_check_start "U-05" "for root's PATH environment variable"
 
     if echo "$PATH" | grep -Eq '^[.:]'; then
@@ -24,6 +28,10 @@ check_root_path() {
 
 # U-06 파일 및 디렉터리 소유자 설정 (소유자가 존재하지 않는 파일/디렉터리 검사)
 check_nouser_files() {
+    if should_skip "U-06"; then
+        return
+    fi
+
     log_check_start "U-06" "for files/directories without a valid owner"
 
     local root_fs files count sample_list
@@ -73,6 +81,10 @@ check_owner_perm() {
 
 # U-07 /etc/passwd 파일 소유자 및 권한 설정 
 check_passwd_owner() {
+    if should_skip "U-07"; then
+        return
+    fi
+
     log_check_start "U-07" "for a owner and a permission of /etc/passwd file"
     
     check_owner_perm "/etc/passwd" "root" 644
@@ -87,6 +99,10 @@ check_passwd_owner() {
 
 # U-08 /etc/shadow 파일 소유자 및 권한 설정
 check_shadow_owner() {
+    if should_skip "U-08"; then
+        return
+    fi
+
     log_check_start "U-08" "for a owner and a permission of /etc/shadow file"
 
     check_owner_perm "/etc/shadow" "root" 400
@@ -101,6 +117,10 @@ check_shadow_owner() {
 
 # U-09 /etc/hosts 파일 소유자 및 권한 설정
 check_hosts_owner() {
+    if should_skip "U-09"; then
+        return
+    fi
+
     log_check_start "U-09" "for a owner and a permission of /etc/hosts file"
 
     check_owner_perm "/etc/hosts" "root" 600
@@ -115,6 +135,10 @@ check_hosts_owner() {
 
 # U-10 /etc/(x)inetd.conf 파일 소유자 및 권한 설정
 check_inetd_owner() {
+    if should_skip "U-10"; then
+        return
+    fi
+
     log_check_start "U-10" "for owners and permissions of /etc/(x)inetd.conf and /etc/xinet.d/"
     
     local files_to_check=()
@@ -157,6 +181,10 @@ check_inetd_owner() {
 
 # U-11 /etc/syslog.conf 파일 소유자 및 권한 설정
 check_syslog_owner() {
+    if should_skip "U-11"; then
+        return
+    fi
+
     log_check_start "U-11" "for a owner and a permission of /etc/syslog.conf file"
 
     local file_path="/etc/syslog.conf"
@@ -177,6 +205,10 @@ check_syslog_owner() {
 
 # U-12 /etc/services 파일 소유자 및 권한 설정
 check_services_owner() {
+    if should_skip "U-12"; then
+        return
+    fi
+
     log_check_start "U-12" "for a owner and a permission of /etc/services file"
 
     local file_path="/etc/services"
@@ -200,6 +232,10 @@ check_services_owner() {
 
 # U-14 사용자, 시스템 시작 파일 및 환경 파일 소유자 및 권한 설정
 check_env_file_owner() {
+    if should_skip "U-14"; then
+        return
+    fi
+
     log_check_start "U-14" "for owners and permissions of each environment variable files"
 
     # config과 연결해서 사용하면 좋을듯. 나중에 구현 
@@ -289,6 +325,10 @@ device_exists_in_sysfs() {
 
 # U-16 /dev에 존재하지 않는 device 파일 점검
 check_dev() {
+    if should_skip "U-16"; then
+        return
+    fi
+
     log_check_start "U-16" "for a invalid device file in /dev"
 
     local vuln_list=()
@@ -323,6 +363,10 @@ check_dev() {
 
 # U-17 $HOME/.rhosts, hosts.equiv 사용 금지
 check_rhosts() {
+    if should_skip "U-17"; then
+        return
+    fi
+
     log_check_start "U-17" "for .rhosts and hosts.equiv files"
     local rc
 
@@ -367,6 +411,10 @@ check_rhosts() {
 
 # U-18 접속 IP 포트 제한
 check_ip_port_restriction() {
+    if should_skip "U-18"; then
+        return
+    fi
+
     log_check_start "U-18" "for a connection IP / port restriction"
 
     # 1) TCP Wrapper 사용 여부 확인 (libwrap)
