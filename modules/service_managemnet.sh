@@ -44,7 +44,7 @@ check_anonymous_ftp() {
 
     # vsftpd 설정 (/etc/vsftpd.conf)
     if [ -f /etc/vsftpd.conf ]; then
-        if grep -E '^\s*anonymous_enable\s*=\s*YES' /etc/vsftpd.conf >/dev/null; then
+        if grep -E '^\s*anonymous_enable\s*=\s*YES' /etc/vsftpd.conf 2>/dev/null; then
             result_fail "U-20 vsftpd 설정: anonymous_enable=YES (취약)"
             return
         fi
@@ -52,7 +52,7 @@ check_anonymous_ftp() {
 
     # proftpd 설정 (/etc/proftpd.conf)
     if [ -f /etc/proftpd.conf ]; then
-        if grep -E '^\s*<Anonymous' /etc/proftpd.conf >/dev/null; then
+        if grep -E '^\s*<Anonymous' /etc/proftpd.conf 2>/dev/null; then
             result_fail "U-20 proftpd 설정: <Anonymous> 블록 존재 (취약)"
             return
         fi
@@ -60,7 +60,7 @@ check_anonymous_ftp() {
 
     # pure-ftpd 설정 (/etc/pure-ftpd/pure-ftpd.conf 또는 /etc/pure-ftpd.conf)
     for cfg in /etc/pure-ftpd/pure-ftpd.conf /etc/pure-ftpd.conf; do
-        if [ -f "$cfg" ] && grep -E '^\s*NoAnonymous\s*=\s*0' "$cfg" >/dev/null; then
+        if [ -f "$cfg" ] && grep -E '^\s*NoAnonymous\s*=\s*0' "$cfg" 2>/dev/null; then
             result_fail "U-20 pure-ftpd 설정: NoAnonymous=0 (취약)"
             return
         fi
@@ -75,5 +75,33 @@ check_anonymous_ftp() {
     result_pass "U-20 Anonymous FTP 비활성화"
 }
 
+# U-21 r 계열 서비스 비활성화
+check_r_service() {
+    if should_skip "U-21"; then
+        return
+    fi
+
+    log_check_start "U-21" "for active r-type services"
+
+    # /etc/inetd.conf 확인
+    if [ -f /etc/inetd.conf ]; then
+        if grep -E "^[^#](\S*\s*){5}\S*(rsh|rlogin|rexec)" "/etc/inetd.conf" 2>/dev/null; then
+            result_fail "U-21 r 계열 서비스 활성화: /etc/inetd.conf 확인 (취약)"
+            return
+        fi
+    fi
+
+    # /etc/xinetd.d/ 확인
+    for cfg in /etc/xinetd.d/rsh /etc/xinetd.d/rlogin /etc/xinetd.d/rexec; do
+        if [ -f "$cfg" ] && grep -E "disable\s*=\s*no" "$cfg" 2>/dev/null; then
+            result_fail "U-21 r 계열 서비스 활성화: $cfg 확인 (취약)"
+            return
+        fi
+    done
+
+    result_pass "U-21 rsh, rlogin, rexec 서비스 비활성화 (양호)"
+}
+
 check_finger_service
 check_anonymous_ftp
+check_r_service
