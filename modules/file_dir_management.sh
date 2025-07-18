@@ -467,7 +467,7 @@ check_ip_port_restriction() {
 
 check_root_path
 # ------------------- 오래 걸려서 디버깅 용으로 잠시 주석 처리 -------------------
-#check_nouser_files 
+check_nouser_files 
 # ------------------------------------------------------------------------------
 check_passwd_owner
 check_shadow_owner
