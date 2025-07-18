@@ -102,6 +102,44 @@ check_r_service() {
     result_pass "U-21 rsh, rlogin, rexec 서비스 비활성화 (양호)"
 }
 
+# U-22 crond 파일 소유자 및 권한 설정
+check_crond_owner() {
+    if should_skip "U-22"; then
+        return
+    fi
+
+    log_check_start "U-22" "for owners and permssions of cron files"
+
+    # crontab 명령어 소유자 및 권한 확인
+    local crontab_cmd=$(command -v crontab 2>/dev/null || echo "/usr/bin/crontab")
+    if [ -x "$crontab_cmd" ]; then
+        local owner=$(stat -c "%U" "$crontab_cmd")
+        local perm=$(stat -c "%a" "$crontab_cmd")
+        if [[ "$owner" != "root" || "$perm" -gt 750 ]]; then
+            result_fail "U-22 crontab 명령어 소유자/권한 설정 미흡 (취약)"
+            return
+        fi
+    fi
+
+    # cron 관련 설정 파일 소유자 및 권한 확인
+    local files=(
+        /etc/crontab
+        /etc/cron.d
+        /etc/cron.hourly
+        /etc/cron.daily
+        /etc/cron.weekly
+        /etc/cron.monthly
+        /etc/cron.allow
+        /etc/cron.deny
+        /var/spool/cron
+        /var/spool/crontabs
+    )
+    
+    # 디렉터리는 어케 순회하고 어케할까??
+
+
+}
+
 check_finger_service
 check_anonymous_ftp
 check_r_service
